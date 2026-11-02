@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>科特少年班｜猿编程4C核心素养体系 2026招生</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mainOrange: '#ff6b22',
+                        darkOrange: '#e64c10',
+                        lightOrange: '#fff2ec',
+                        darkText: '#222222',
+                        grayText: '#555555',
+                        successGreen: '#86d993'
+                    },
+                    fontFamily: {
+                        sans: ['system-ui', 'PingFang SC', 'Microsoft YaHei', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .text-shadow { text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+            .bg-gradient-orange { background: linear-gradient(135deg,#ff7024,#ff4814); }
+            .card-shadow { box-shadow: 0 4px 16px rgba(255,90,20,0.18); }
+            .modal-mask {
+                background-color: rgba(0,0,0,0.6);
+            }
+            .card-border-gradient {
+                background: linear-gradient(90deg, #ffcc00, #86d993);
+                padding: 3px;
+                border-radius: 16px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-white text-darkText overflow-x-hidden">
+<!-- 查询弹窗 -->
+<div id="modalMask" class="fixed inset-0 modal-mask z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-xl p-6 relative">
+        <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl">
+            <i class="fa fa-times"></i>
+        </button>
+        <h3 class="text-xl font-bold mb-4 text-center">少年班录取结果查询</h3>
+        <form id="queryForm">
+            <div class="mb-4">
+                <label class="block text-sm mb-1">孩子姓名</label>
+                <input type="text" name="kidName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mainOrange" placeholder="请输入孩子姓名">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm mb-1">手机号后四位</label>
+                <input type="text" name="phoneLast4" required maxlength="4" pattern="[0-9]{4}" oninput="value=value.replace(/[^\d]/g,'')" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mainOrange" placeholder="填写手机号最后4位数字">
+            </div>
+            <button type="submit" class="w-full bg-mainOrange text-white py-3 rounded-lg font-medium hover:bg-darkOrange transition">提交查询</button>
+        </form>
+    </div>
+</div>
+
+<!-- 录取结果卡片弹窗（和截图样式一致） -->
+<div id="resultMask" class="fixed inset-0 modal-mask z-[60] hidden flex items-center justify-center p-4">
+    <div class="card-border-gradient w-full max-w-xl">
+        <div class="bg-white rounded-xl p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="resName" class="text-3xl font-bold">谭子宸 同学</h2>
+                <span id="resTag" class="bg-successGreen text-white px-4 py-1 rounded-full text-lg">恭喜录取</span>
+            </div>
+            <div id="resContent">
+                <p class="text-gray-600 text-lg mb-3">在全国范围内表现突出，各项能力均衡优异，学情排名前20%，获得600元专项奖学金，恭喜录取！</p>
+                <p class="text-gray-500 text-lg mb-6">祝贺！入选科特少年班，班班老师将尽快联系您安排后续事宜。</p>
+            </div>
+            <div id="admitBox" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-xl p-5 relative overflow-hidden border border-orange-200">
+                <div class="absolute top-0 right-0 bg-red-500 text-white px-4 py-1 rotate-45 translate-x-8 -translate-y-1">HOT</div>
+                <div class="text-center">
+                    <p class="text-orange-600 text-xl font-bold mb-2">🔥 A+班名额有限 · 报名从速 🔥</p>
+                    <p class="text-orange-700 text-xl font-bold mb-4">报名截止时间：<span class="text-red-500">11月3日 00:00</span></p>
+                    <!-- 这里改成a标签，跳转你给的链接 -->
+                    <a href="https://m.yuanfudao.com/ada-combined-signup-h5/#/combined-signup-v2?dualLessonId=579" target="_blank" class="block w-full bg-gradient-to-r from-red-500 to-orange-500 text-white py-4 rounded-full text-2xl font-bold">立即进班 →</a>
+                </div>
+            </div>
+            <div id="noAdmitBox" class="hidden text-center py-6">
+                <p class="text-gray-600 text-lg">本次暂未入选科特少年班，后续还有其他进阶班次机会，老师会持续跟进孩子学习情况。</p>
+                <button id="closeResult" class="mt-4 px-6 py-2 bg-mainOrange text-white rounded-lg hover:bg-darkOrange transition">关闭</button>
+            </div>
+            <button id="closeResultAdmit" class="hidden mt-4 w-full text-gray-500">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 顶部Banner -->
+<section class="bg-gradient-orange text-white py-10 md:py-16">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center">
+            <h2 class="text-[clamp(1.5rem,4vw,2.8rem)] font-bold text-shadow">猿编程名师领航 汇聚全球教育精英力量</h2>
+            <p class="mt-3 text-lg opacity-90">4C核心素养体系 · 新华网&金砖联盟双认证 · 2026首次招生</p>
+        </div>
+        <div class="mt-8 flex flex-wrap justify-center gap-6">
+            <div class="bg-white/10 rounded-xl p-4 max-w-sm backdrop-blur">
+                <p class="font-semibold">刘嘉｜清华大学心理与认知科学系主任</p>
+                <p class="text-sm mt-1 opacity-85">青少年AI教育研究院首席科学顾问</p>
+            </div>
+            <div class="bg-white/10 rounded-xl p-4 max-w-sm backdrop-blur">
+                <p class="font-semibold">魏坤琳｜北大教授《最强大脑》科学评审</p>
+                <p class="text-sm mt-1 opacity-85">青少年AI教育研究院首席认知科学顾问</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 标题模块 -->
+<section class="py-10 bg-lightOrange">
+    <div class="max-w-7xl mx-auto px-4">
+        <h1 class="text-[clamp(1.8rem,3vw,2.4rem)] font-bold text-center">科特少年班 招生介绍</h1>
+        <p class="text-center mt-2 text-grayText">猿编程 × 4C核心素养体系 科学设计</p>
+        <div class="flex justify-center gap-4 mt-6">
+            <button id="openModalBtn1" class="bg-mainOrange text-white px-6 py-3 rounded-lg font-medium hover:bg-darkOrange transition">立即查询录取结果</button>
+            <a href="#" class="border border-mainOrange text-mainOrange px-6 py-3 rounded-lg font-medium hover:bg-orange-50 transition">了解详情</a>
+        </div>
+    </div>
+</section>
+
+<!-- 4C核心素养四大维度 -->
+<section class="py-14">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-3">业内率先创立 AI核心素养新标准</h2>
+        <p class="text-center text-grayText mb-10">猿编程4C体系以编程为核心载体，提升青少年AI核心素养。获新华网教育论坛、金砖国家联盟权威认可。</p>
+
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white card-shadow rounded-xl p-6 border-l-4 border-mainOrange">
+                <h3 class="text-xl font-bold text-mainOrange">Cognition · 认知</h3>
+                <p class="mt-3 text-grayText">提升底层认知能力，塑造超强大脑。编程特有的「编写‑运行‑调试」即时反馈循环，帮助孩子提升<span class="font-medium">专注力、工作记忆、抑制控制</span>等底层认知能力。就像给大脑做力量训练，CPU和内存升级了，学什么都快。</p>
+            </div>
+            <div class="bg-white card-shadow rounded-xl p-6 border-l-4 border-mainOrange">
+                <h3 class="text-xl font-bold text-mainOrange">Complex Thinking · 复合思维</h3>
+                <p class="mt-3 text-grayText">锻炼复合思维能力，赠送超级大脑工具箱。三大法宝：<span class="font-medium">计算思维、创造性思维、系统性思维</span>。工具箱越丰富，应对未来越从容。</p>
+            </div>
+            <div class="bg-white card-shadow rounded-xl p-6 border-l-4 border-mainOrange">
+                <h3 class="text-xl font-bold text-mainOrange">Confidence & Driver · 自我效能</h3>
+                <p class="mt-3 text-grayText">促进自我效能，内置「我能行」永动机。编程提供<span class="font-medium">即时反馈和可见成果</span>——亲眼看到自己写的代码让角色动起来、游戏跑起来。每一次成功调试，都在为孩子的自信心充能！</p>
+            </div>
+            <div class="bg-white card-shadow rounded-xl p-6 border-l-4 border-mainOrange">
+                <h3 class="text-xl font-bold text-mainOrange">Cross‑discipline · 跨学科融合</h3>
+                <p class="mt-3 text-grayText">赋能学科融合，知识万能胶。编程天然具备跨学科属性——编程×数学、编程×语文、编程×科学。各科知识在创造中真正活起来。</p>
+            </div>
+        </div>
+        <div class="mt-10 text-center italic text-gray-600 max-w-3xl mx-auto text-lg">
+            “AI不是对手。未来的大神，不是那个能打败AI的人，而是那个最懂得驾驭AI、并与它一同创造的人。”
+            <br>—‑‑猿编程创始人 李翊
+        </div>
+    </div>
+</section>
+
+<!-- 硬核实力 权威认证+数据 -->
+<section class="py-14 bg-slate-50">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-10">4C体系背后的 硬核实力</h2>
+        <div class="grid md:grid-cols-2 gap-8">
+            <div>
+                <h4 class="font-bold text-xl mb-4">四大权威认证</h4>
+                <ul class="space-y-3 text-grayText">
+                    <li class="flex items-start gap-2"><i class="fa fa-check-circle text-mainOrange mt-1"></i>新华网教育论坛｜入选「教育品牌影响力案例」</li>
+                    <li class="flex items-start gap-2"><i class="fa fa-check-circle text-mainOrange mt-1"></i>金砖国家联盟｜首届轮值单位，21个成员国认可</li>
+                    <li class="flex items-start gap-2"><i class="fa fa-check-circle text-mainOrange mt-1"></i>联合国儿童基金会｜课程入选「人工智能为儿童」典型案例</li>
+                    <li class="flex items-start gap-2"><i class="fa fa-check-circle text-mainOrange mt-1"></i>青少年专业代码编程教育学员数连续三年全国第一</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xl mb-4">核心数据</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg p-4 text-center card-shadow">
+                        <div class="text-3xl font-bold text-mainOrange">800万+</div>
+                        <div class="text-sm text-grayText mt-1">累计培养学员</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 text-center card-shadow">
+                        <div class="text-3xl font-bold text-mainOrange">4500+</div>
+                        <div class="text-sm text-grayText mt-1">合作学校</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 text-center card-shadow">
+                        <div class="text-3xl font-bold text-mainOrange">600+</div>
+                        <div class="text-sm text-grayText mt-1">知识产权</div>
+                    </div>
+                    <div class="bg-white rounded-lg p-4 text-center card-shadow">
+                        <div class="text-3xl font-bold text-mainOrange">9年</div>
+                        <div class="text-sm text-grayText mt-1">AI教育深耕</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 grid md:grid-cols-3 gap-6">
+            <div class="bg-white p-5 rounded-lg card-shadow">
+                <p class="font-semibold">熊璋｜教育部信息科技课程标准专家组组长</p>
+                <p class="mt-2 text-grayText">“AI正在颠覆传统教育。AI教育是国家战略，也是面向未来的教育。”</p>
+            </div>
+            <div class="bg-white p-5 rounded-lg card-shadow">
+                <p class="font-semibold">刘嘉｜清华大学心理与认知科学系主任</p>
+                <p class="mt-2 text-grayText">“教育须从培养'专才'转向培育'通才'，计算思维是21世纪人才的基本素养。”</p>
+            </div>
+            <div class="bg-white p-5 rounded-lg card-shadow">
+                <p class="font-semibold">魏坤琳｜北京大学教授</p>
+                <p class="mt-2 text-grayText">“编程能系统培养五大计算思维能力，有效提升工作记忆、逻辑推理等底层元能力。”</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 招生评审标准 -->
+<section class="py-14">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-3">专业评审 · 公平公正 · 以赛促学</h2>
+        <p class="text-center text-grayText mb-8">六大维度综合评审，4C体系教研团队 + 国一赛考教练 + 金牌班主任全程护航</p>
+
+        <div class="grid md:grid-cols-2 gap-10">
+            <div>
+                <h4 class="font-bold text-xl mb-3">招生宗旨</h4>
+                <p class="text-grayText">以掌握人工智能AI工具为目标，学习过程中推荐学员参加教育部白名单赛事作为阶段考核，提前进行科技特长生布局。</p>
+                <h4 class="font-bold text-xl mt-7 mb-3">招生标准｜六大维度综合评审</h4>
+                <ul class="space-y-2 text-grayText">
+                    <li>作品完成 <span class="text-mainOrange font-medium">30%</span></li>
+                    <li>挑战通过率 <span class="text-mainOrange font-medium">20%</span></li>
+                    <li>完课时长 <span class="text-mainOrange font-medium">20%</span></li>
+                    <li>随堂测试 <span class="text-mainOrange font-medium">12%</span></li>
+                    <li>一次过关率 <span class="text-mainOrange font-medium">10%</span></li>
+                    <li>自查纠错 <span class="text-mainOrange font-medium">8%</span></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold text-xl mb-3">评选划分标准</h4>
+                <p class="text-grayText">按照综合表现进行全国排名，评选出全国排名前30%的学员进入少年班。入选学员将获得：</p>
+                <ul class="mt-4 space-y-2">
+                    <li class="flex items-start gap-2"><i class="fa fa-check text-mainOrange mt-1"></i>4C体系教研团队+主讲老师教学资源</li>
+                    <li class="flex items-start gap-2"><i class="fa fa-check text-mainOrange mt-1"></i>国一等级赛考教练带队赛考团队</li>
+                    <li class="flex items-start gap-2"><i class="fa fa-check text-mainOrange mt-1"></i>金牌班主任老师提供专属服务</li>
+                </ul>
+                <div class="mt-8">
+                    <button id="openModalBtn2" class="inline-block bg-mainOrange text-white px-7 py-3 rounded-lg font-medium hover:bg-darkOrange transition">查询录取结果</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 学员榜样成果展示 -->
+<section class="py-14 bg-lightOrange">
+    <div class="max-w-7xl mx-auto px-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-center mb-3">过往学员 获奖展示</h2>
+        <p class="text-center text-grayText mb-10">致力于AI教育，助力科技特长 —— 每一份荣誉都是孩子未来的基石</p>
+
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!--学员卡片1-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">徐云鳌｜🏅NOIP一等奖</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：山东潍坊｜年龄：16岁｜学习6年</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程，钢琴</p>
+                </div>
+            </div>
+            <!--学员卡片2-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">谢欣宸｜🏅青科赛省赛一等奖</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：重庆合川区｜年龄：12岁｜学习两年半</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程，舞蹈，主持</p>
+                </div>
+            </div>
+            <!--学员卡片3-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">王斌｜🥇国赛金牌</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：河南商丘｜年龄：12岁｜学习四年</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程，围棋</p>
+                </div>
+            </div>
+            <!--学员卡片4-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">陶幼恩｜📜AILD金牌、多等级证书</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：江苏苏州｜年龄：9岁｜学习四年半</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程，天文，科学</p>
+                </div>
+            </div>
+            <!--学员卡片5-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">张佑一｜🥉白名单决赛铜牌</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：浙江杭州｜年龄：9岁｜学习近一年</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程，围棋</p>
+                </div>
+            </div>
+            <!--学员卡片6-->
+            <div class="bg-white rounded-xl overflow-hidden card-shadow">
+                <div class="p-5">
+                    <h5 class="font-bold text-lg">朱颜笑｜🎯编程特长助力小升初重点中学</h5>
+                    <p class="text-sm text-grayText mt-2">家乡：浙江湖州｜年龄：13岁｜学习三年</p>
+                    <p class="text-sm text-grayText mt-1">兴趣爱好：编程、读书</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!--页脚-->
+<footer class="bg-darkText text-white py-10">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <p class="font-semibold text-lg">科特少年班评选组委会</p>
+        <p class="text-sm mt-2 opacity-75">猿编程 × 4C核心素养体系 · 新华网教育论坛 & 金砖国家联盟 权威认证</p>
+        <p class="text-xs mt-4 opacity-50">4C体系：Cognition · Complex Thinking · Confidence & Driver · Cross‑discipline</p>
+    </div>
+</footer>
+
+<script>
+    // ==========录取名单在这里添加学员==========
+    const admitList = [
+        {name:"刘鹏程",last4:"1234"}
+    ];
+
+    const modalMask = document.getElementById('modalMask');
+    const resultMask = document.getElementById('resultMask');
+    const queryForm = document.getElementById('queryForm');
+    const closeModal = document.getElementById('closeModal');
+    const closeResult = document.getElementById('closeResult');
+    const closeResultAdmit = document.getElementById('closeResultAdmit');
+    const openModalBtn1 = document.getElementById('openModalBtn1');
+    const openModalBtn2 = document.getElementById('openModalBtn2');
+    const resName = document.getElementById('resName');
+    const resTag = document.getElementById('resTag');
+    const admitBox = document.getElementById('admitBox');
+    const noAdmitBox = document.getElementById('noAdmitBox');
+
+    //打开查询弹窗
+    openModalBtn1.onclick = () => modalMask.classList.remove('hidden');
+    openModalBtn2.onclick = () => modalMask.classList.remove('hidden');
+    closeModal.onclick = () => modalMask.classList.add('hidden');
+    modalMask.onclick = (e)=>{if(e.target===modalMask) modalMask.classList.add('hidden')}
+
+    //关闭结果弹窗
+    closeResult.onclick = ()=> resultMask.classList.add('hidden');
+    closeResultAdmit.onclick = ()=> resultMask.classList.add('hidden');
+    resultMask.onclick = (e)=>{if(e.target===resultMask) resultMask.classList.add('hidden')}
+
+    //提交查询
+    queryForm.onsubmit = function(e){
+        e.preventDefault();
+        const kidName = this.kidName.value.trim();
+        const last4 = this.phoneLast4.value.trim();
+        //查找匹配
+        const findItem = admitList.find(item=> item.name === kidName && item.last4 === last4);
+        modalMask.classList.add('hidden');
+        if(findItem){
+            //录取，展示截图样式
+            resName.innerText = kidName + " 同学";
+            resTag.innerText = "恭喜录取";
+            admitBox.classList.remove('hidden');
+            noAdmitBox.classList.add('hidden');
+            closeResultAdmit.classList.remove('hidden');
+        }else{
+            //未录取
+            resName.innerText = kidName + " 同学";
+            resTag.innerText = "暂未录取";
+            admitBox.classList.add('hidden');
+            noAdmitBox.classList.remove('hidden');
+            closeResultAdmit.classList.add('hidden');
+        }
+        resultMask.classList.remove('hidden');
+    }
+</script>
+</body>
+</html>
